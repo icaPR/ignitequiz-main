@@ -1,5 +1,5 @@
-import { View, Text, Dimensions } from "react-native";
-import Animated, { FadeInUp, Keyframe } from "react-native-reanimated";
+import { Text, Dimensions } from "react-native";
+import Animated, { Keyframe, runOnJS } from "react-native-reanimated";
 import { Option } from "../Option";
 import { styles } from "./styles";
 
@@ -12,6 +12,7 @@ type Props = {
   question: QuestionProps;
   alternativeSelected?: number | null;
   setAlternativeSelected?: (value: number) => void;
+  onUnmount: () => void;
 };
 
 const SCREEN_WIDTH = Dimensions.get("window").width;
@@ -19,33 +20,36 @@ export function Question({
   question,
   alternativeSelected,
   setAlternativeSelected,
+  onUnmount,
 }: Props) {
   const enteringKeyframe = new Keyframe({
-    from: {
+    form: {
       opacity: 0,
-      transform: [{ translateX: 0 }, { rotate: "90deg" }],
     },
     to: {
       opacity: 1,
-      transform: [{ translateX: SCREEN_WIDTH }, { rotate: "0deg" }],
     },
   });
+
   const exitingKeyframe = new Keyframe({
     from: {
       opacity: 1,
-      transform: [{ translateX: 0 }, { rotate: "0deg" }],
     },
     to: {
       opacity: 0,
-      transform: [{ translateX: SCREEN_WIDTH * -1 }, { rotate: "-90deg" }],
     },
   });
 
   return (
     <Animated.View
       style={styles.container}
-      entering={enteringKeyframe.duration(400)}
-      exiting={exitingKeyframe.duration(400)}
+      entering={enteringKeyframe}
+      exiting={exitingKeyframe.duration(400).withCallback((finished) => {
+        "worklet";
+        if (finished) {
+          runOnJS(onUnmount)();
+        }
+      })}
     >
       <Text style={styles.title}>{question.title}</Text>
 
